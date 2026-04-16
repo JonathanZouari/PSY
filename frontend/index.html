@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניתוח שיחות</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --rec: #ef4444;
+      --idle: #22c55e;
+      --pos: #dcfce7;
+      --pos-text: #166534;
+      --neg: #fee2e2;
+      --neg-text: #991b1b;
+      --neu: #f3f4f6;
+      --neu-text: #374151;
+      --mix: #fef3c7;
+      --mix-text: #854d0e;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --radius: 8px;
+      --radius-sm: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: 'Heebo', 'Assistant', 'Rubik', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      direction: rtl;
+      text-align: right;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* ─── Auth screen ─── */
+    .auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .auth-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 36px;
+      max-width: 400px;
+      width: 100%;
+    }
+    .auth-card h1 { font-size: 1.75rem; margin-bottom: 4px; }
+    .auth-card .subtitle { color: var(--text-muted); margin-bottom: 24px; }
+    .auth-card label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+    .auth-card input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      background: #fafafa;
+      direction: ltr;
+      text-align: left;
+    }
+    .auth-card input:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+      background: #fff;
+    }
+    .auth-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .btn-primary { background: var(--primary); color: #fff; flex: 1; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #f3f4f6; color: var(--text); }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .auth-error {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: var(--neg);
+      color: var(--neg-text);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+    }
+    .auth-info {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: var(--pos);
+      color: var(--pos-text);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+    }
+
+    /* ─── App header ─── */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      gap: 16px;
+    }
+    .app-header h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; }
+    .app-header .subtitle { margin-top: 6px; color: var(--text-muted); }
+    .user-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    .card h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 16px; }
+
+    /* ─── Recording panel ─── */
+    .recording-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0;
+    }
+    .record-btn {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+      color: #fff;
+    }
+    .record-btn:hover { transform: scale(1.05); }
+    .record-btn.idle { background: var(--idle); }
+    .record-btn.recording { background: var(--rec); animation: pulse 1.5s ease-out infinite; }
+    .record-btn:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
+    .record-btn svg { width: 40px; height: 40px; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+      70% { box-shadow: 0 0 0 24px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    }
+    .record-label { font-size: 0.95rem; font-weight: 500; }
+    .timer {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 2.5rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .status-line { font-size: 0.95rem; color: var(--text-muted); min-height: 1.5em; }
+
+    /* ─── Transcript ─── */
+    .transcript-section { margin-bottom: 32px; }
+    #transcript {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      background: #fafafa;
+      white-space: pre-wrap;
+    }
+
+    /* ─── Tabs ─── */
+    .tabs {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s ease;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-content { min-height: 200px; padding: 16px 0; display: none; }
+    .tab-content.active { display: block; }
+    .tab-content h4 { font-size: 1rem; font-weight: 600; margin: 16px 0 10px; }
+    .tab-content p { font-size: 0.95rem; line-height: 1.7; }
+    .tab-content ul { list-style: none; padding-right: 0; }
+    .tab-content ul li {
+      position: relative; padding-right: 18px; margin-bottom: 8px; font-size: 0.95rem;
+    }
+    .tab-content ul li::before {
+      content: "•"; position: absolute; right: 0; top: 0; color: var(--primary); font-weight: 700;
+    }
+
+    .empty { color: var(--text-muted); font-style: italic; padding: 24px 0; text-align: center; }
+
+    /* Chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      background: var(--neu); color: var(--neu-text); padding: 6px 14px;
+      border-radius: 999px; font-size: 0.875rem; font-weight: 500;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* Tasks */
+    .task-list { display: flex; flex-direction: column; gap: 12px; }
+    .task-card {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-right: 3px solid var(--primary);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+    }
+    .task-card .task-title { font-weight: 600; margin-bottom: 6px; font-size: 0.95rem; }
+    .task-card .task-meta {
+      display: flex; gap: 16px; font-size: 0.85rem; color: var(--text-muted);
+    }
+    .task-card .task-meta strong { color: var(--text); font-weight: 500; }
+
+    /* Sentiment */
+    .sentiment-box { padding: 24px; border-radius: var(--radius-sm); text-align: center; }
+    .sentiment-box.positive { background: var(--pos); color: var(--pos-text); }
+    .sentiment-box.negative { background: var(--neg); color: var(--neg-text); }
+    .sentiment-box.neutral { background: var(--neu); color: var(--neu-text); }
+    .sentiment-box.mixed { background: var(--mix); color: var(--mix-text); }
+    .sentiment-box .sentiment-label { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+    .sentiment-box p { font-size: 0.95rem; opacity: 0.9; }
+
+    /* Entities */
+    .entities-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+
+    /* History */
+    #historyTable { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    #historyTable thead { background: #fafafa; }
+    #historyTable th {
+      text-align: right; padding: 12px 16px; font-weight: 600; color: var(--text-muted);
+      font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border);
+    }
+    #historyTable td {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    #historyTable tbody tr:last-child td { border-bottom: none; }
+    #historyTable tbody tr:hover { background: #fafafa; }
+    .summary-cell {
+      color: var(--text-muted); max-width: 320px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .btn-view {
+      background: var(--primary); color: #fff; border: none;
+      padding: 6px 14px; border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+    }
+    .btn-view:hover { background: var(--primary-hover); }
+
+    @media (max-width: 640px) {
+      .container { padding: 24px 16px 48px; }
+      .card { padding: 24px 20px; }
+      .app-header h1 { font-size: 1.75rem; }
+      .timer { font-size: 2rem; }
+      .entities-grid { grid-template-columns: 1fr; }
+      .summary-cell { max-width: 160px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════ AUTH SCREEN ════════ -->
+  <div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <h1>ניתוח שיחות</h1>
+      <p class="subtitle">התחבר כדי להתחיל</p>
+      <form id="authForm">
+        <label for="email">אימייל</label>
+        <input type="email" id="email" required autocomplete="email" value="test@example.com">
+        <label for="password">סיסמה</label>
+        <input type="password" id="password" required autocomplete="current-password" value="Test1234!">
+        <div class="auth-actions">
+          <button type="submit" class="btn btn-primary" id="loginBtn">התחבר</button>
+          <button type="button" class="btn btn-secondary" id="signupBtn">הרשמה</button>
+        </div>
+      </form>
+      <div id="authError" class="auth-error" hidden></div>
+      <div id="authInfo" class="auth-info" hidden></div>
+    </div>
+  </div>
+
+  <!-- ════════ MAIN APP ════════ -->
+  <div id="app" hidden>
+    <div class="container">
+
+      <header class="app-header">
+        <div>
+          <h1>ניתוח שיחות</h1>
+          <p class="subtitle">הקלטה, תמלול וניתוח אוטומטי של שיחות</p>
+        </div>
+        <div class="user-bar">
+          <span id="userEmail"></span>
+          <button class="btn btn-secondary" id="logoutBtn">התנתק</button>
+        </div>
+      </header>
+
+      <!-- Recording Panel -->
+      <section class="card">
+        <div class="recording-panel">
+          <button id="recordBtn" class="record-btn idle" aria-label="התחל הקלטה">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2Z" fill="currentColor"/>
+              <path d="M5 11C5 10.4477 5.44772 10 6 10C6.55228 10 7 10.4477 7 11V12C7 14.7614 9.23858 17 12 17C14.7614 17 17 14.7614 17 12V11C17 10.4477 17.4477 10 18 10C18.5523 10 19 10.4477 19 11V12C19 15.5265 16.3923 18.4439 13 18.9381V21C13 21.5523 12.5523 22 12 22C11.4477 22 11 21.5523 11 21V18.9381C7.60771 18.4439 5 15.5265 5 12V11Z" fill="currentColor"/>
+            </svg>
+          </button>
+          <div class="record-label" id="recordLabel">התחל הקלטה</div>
+          <div class="timer" id="timer">00:00</div>
+          <div class="status-line" id="status"></div>
+        </div>
+      </section>
+
+      <!-- Results Panel -->
+      <section id="result" class="card" hidden>
+        <div class="transcript-section">
+          <h2>תמליל</h2>
+          <div id="transcript"></div>
+        </div>
+        <div class="analysis-section">
+          <h2>ניתוח</h2>
+          <nav class="tabs" role="tablist">
+            <button class="tab-btn active" data-tab="summary">סיכום</button>
+            <button class="tab-btn" data-tab="topics">נושאים</button>
+            <button class="tab-btn" data-tab="tasks">משימות</button>
+            <button class="tab-btn" data-tab="sentiment">סנטימנט</button>
+            <button class="tab-btn" data-tab="entities">ישויות</button>
+          </nav>
+          <div class="tab-content active" data-tab="summary"></div>
+          <div class="tab-content" data-tab="topics"></div>
+          <div class="tab-content" data-tab="tasks"></div>
+          <div class="tab-content" data-tab="sentiment"></div>
+          <div class="tab-content" data-tab="entities"></div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section class="card">
+        <h2>היסטוריית הקלטות</h2>
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>משך</th>
+              <th>סיכום</th>
+              <th>פעולה</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="4" class="empty">טוען...</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+    const SUPABASE_URL = 'https://gykjrdgjytphuchnsbcy.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_S9gaqhBTq_hK128q8AgEeg_dUyPrPkH'
+    const API = 'http://localhost:5000/api'
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // ─── DOM helpers ───
+    const $ = (id) => document.getElementById(id)
+    const authScreen = $('authScreen')
+    const app = $('app')
+    const authError = $('authError')
+    const authInfo = $('authInfo')
+    const recordBtn = $('recordBtn')
+    const recordLabel = $('recordLabel')
+    const timerEl = $('timer')
+    const statusEl = $('status')
+    const resultCard = $('result')
+    const transcriptEl = $('transcript')
+    const historyBody = $('historyBody')
+
+    function showError(msg) {
+      authError.textContent = msg
+      authError.hidden = false
+      authInfo.hidden = true
+    }
+    function showInfo(msg) {
+      authInfo.textContent = msg
+      authInfo.hidden = false
+      authError.hidden = true
+    }
+    function clearAuthMessages() {
+      authError.hidden = true
+      authInfo.hidden = true
+    }
+
+    // ─── Auth ───
+    $('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      clearAuthMessages()
+      const email = $('email').value
+      const password = $('password').value
+      $('loginBtn').disabled = true
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      $('loginBtn').disabled = false
+      if (error) showError(`כשל התחברות: ${error.message}`)
+    })
+
+    $('signupBtn').addEventListener('click', async () => {
+      clearAuthMessages()
+      const email = $('email').value
+      const password = $('password').value
+      if (!email || !password) return showError('נדרש אימייל וסיסמה')
+      $('signupBtn').disabled = true
+      const { error } = await supabase.auth.signUp({ email, password })
+      $('signupBtn').disabled = false
+      if (error) showError(`כשל הרשמה: ${error.message}`)
+      else showInfo('נרשמת! אם נדרש אימות מייל, פתח את המייל שקיבלת.')
+    })
+
+    $('logoutBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut()
+    })
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        authScreen.hidden = true
+        app.hidden = false
+        $('userEmail').textContent = session.user.email
+        loadHistory()
+      } else {
+        authScreen.hidden = false
+        app.hidden = true
+        resultCard.hidden = true
+      }
+    })
+
+    async function authHeaders() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('not authenticated')
+      return { Authorization: `Bearer ${session.access_token}` }
+    }
+
+    // ─── Tabs ───
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn))
+        document.querySelectorAll('.tab-content').forEach((c) =>
+          c.classList.toggle('active', c.dataset.tab === tab)
+        )
+      })
+    })
+
+    // ─── Recording ───
+    let mediaRecorder = null
+    let chunks = []
+    let timerInterval = null
+    let recordStart = 0
+
+    function fmtTime(seconds) {
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0')
+      const s = String(seconds % 60).padStart(2, '0')
+      return `${m}:${s}`
+    }
+
+    recordBtn.addEventListener('click', async () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop()
+        return
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        chunks = []
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' })
+        mediaRecorder.addEventListener('dataavailable', (e) => {
+          if (e.data.size > 0) chunks.push(e.data)
+        })
+        mediaRecorder.addEventListener('stop', async () => {
+          stream.getTracks().forEach((t) => t.stop())
+          clearInterval(timerInterval)
+          const duration = Math.floor((Date.now() - recordStart) / 1000)
+          const blob = new Blob(chunks, { type: 'audio/webm' })
+          recordBtn.classList.remove('recording')
+          recordBtn.classList.add('idle')
+          recordLabel.textContent = 'התחל הקלטה'
+          recordBtn.disabled = true
+          await uploadRecording(blob, duration)
+          recordBtn.disabled = false
+        })
+        mediaRecorder.start()
+        recordStart = Date.now()
+        recordBtn.classList.remove('idle')
+        recordBtn.classList.add('recording')
+        recordLabel.textContent = 'עצור הקלטה'
+        statusEl.textContent = 'מקליט...'
+        timerInterval = setInterval(() => {
+          const elapsed = Math.floor((Date.now() - recordStart) / 1000)
+          timerEl.textContent = fmtTime(elapsed)
+        }, 250)
+      } catch (err) {
+        statusEl.textContent = `שגיאת מיקרופון: ${err.message}`
+      }
+    })
+
+    async function uploadRecording(blob, duration) {
+      try {
+        statusEl.textContent = 'מעלה ומתמלל...'
+        const fd = new FormData()
+        fd.append('file', blob, 'audio.webm')
+        fd.append('duration_seconds', String(duration))
+        const headers = await authHeaders()
+        const res = await fetch(`${API}/recordings`, { method: 'POST', headers, body: fd })
+        if (!res.ok) {
+          const err = await res.text()
+          throw new Error(`${res.status}: ${err}`)
+        }
+        const { recording_id } = await res.json()
+        statusEl.textContent = 'מנתח...'
+        await loadRecording(recording_id)
+        statusEl.textContent = 'מוכן ✓'
+        await loadHistory()
+        timerEl.textContent = '00:00'
+      } catch (err) {
+        statusEl.textContent = `שגיאה: ${err.message}`
+      }
+    }
+
+    // ─── Render results ───
+    async function loadRecording(id) {
+      const headers = await authHeaders()
+      const res = await fetch(`${API}/recordings/${id}`, { headers })
+      if (!res.ok) throw new Error(`טעינת ההקלטה נכשלה (${res.status})`)
+      const data = await res.json()
+      renderResult(data)
+    }
+
+    function renderResult(data) {
+      const a = data.analysis || {}
+      transcriptEl.textContent = a.transcript || '(אין תמליל)'
+
+      // Summary
+      const summary = document.querySelector('.tab-content[data-tab="summary"]')
+      const keyPoints = (a.key_points || []).map((p) => `<li>${escape(p)}</li>`).join('')
+      summary.innerHTML = a.summary
+        ? `<p>${escape(a.summary)}</p>${keyPoints ? `<h4>נקודות מפתח</h4><ul>${keyPoints}</ul>` : ''}`
+        : '<div class="empty">אין סיכום</div>'
+
+      // Topics
+      const topics = document.querySelector('.tab-content[data-tab="topics"]')
+      const topicsArr = a.topics || []
+      topics.innerHTML = topicsArr.length
+        ? `<div class="chips">${topicsArr.map((t) => `<span class="chip">${escape(t)}</span>`).join('')}</div>`
+        : '<div class="empty">לא זוהו נושאים</div>'
+
+      // Tasks
+      const tasks = document.querySelector('.tab-content[data-tab="tasks"]')
+      const tasksArr = a.tasks || []
+      tasks.innerHTML = tasksArr.length
+        ? `<div class="task-list">${tasksArr
+            .map(
+              (t) => `<div class="task-card">
+              <div class="task-title">${escape(t.task)}</div>
+              <div class="task-meta">
+                <span><strong>אחראי:</strong> ${escape(t.owner)}</span>
+                <span><strong>מועד:</strong> ${escape(t.due)}</span>
+              </div>
+            </div>`
+            )
+            .join('')}</div>`
+        : '<div class="empty">לא זוהו משימות</div>'
+
+      // Sentiment
+      const sentiment = document.querySelector('.tab-content[data-tab="sentiment"]')
+      const labels = { positive: 'חיובי', negative: 'שלילי', neutral: 'נייטרלי', mixed: 'מעורב' }
+      const sentVal = a.sentiment || 'neutral'
+      sentiment.innerHTML = `<div class="sentiment-box ${sentVal}">
+        <div class="sentiment-label">${labels[sentVal] || sentVal}</div>
+        <p>${escape(a.sentiment_explanation || '')}</p>
+      </div>`
+
+      // Entities
+      const entities = document.querySelector('.tab-content[data-tab="entities"]')
+      const e = a.entities || {}
+      const groups = [
+        ['אנשים', e.people],
+        ['ארגונים', e.organizations],
+        ['תאריכים', e.dates],
+        ['מקומות', e.places],
+      ]
+      entities.innerHTML = `<div class="entities-grid">${groups
+        .map(
+          ([title, arr]) => `<div class="entity-group">
+          <h4>${title}</h4>
+          ${(arr || []).length
+            ? `<div class="chips">${(arr || []).map((x) => `<span class="chip">${escape(x)}</span>`).join('')}</div>`
+            : '<div class="empty">—</div>'}
+        </div>`
+        )
+        .join('')}</div>`
+
+      resultCard.hidden = false
+    }
+
+    function escape(s) {
+      const div = document.createElement('div')
+      div.textContent = s == null ? '' : String(s)
+      return div.innerHTML
+    }
+
+    // ─── History ───
+    async function loadHistory() {
+      try {
+        const headers = await authHeaders()
+        const res = await fetch(`${API}/recordings`, { headers })
+        if (!res.ok) throw new Error(`${res.status}`)
+        const { items } = await res.json()
+        renderHistory(items)
+      } catch (err) {
+        historyBody.innerHTML = `<tr><td colspan="4" class="empty">שגיאה: ${escape(err.message)}</td></tr>`
+      }
+    }
+
+    function renderHistory(items) {
+      if (!items.length) {
+        historyBody.innerHTML = '<tr><td colspan="4" class="empty">אין הקלטות עדיין</td></tr>'
+        return
+      }
+      historyBody.innerHTML = items
+        .map((it) => {
+          const date = new Date(it.created_at).toLocaleDateString('he-IL')
+          const dur = it.duration_seconds != null ? fmtTime(it.duration_seconds) : '—'
+          return `<tr>
+            <td>${date}</td>
+            <td>${dur}</td>
+            <td class="summary-cell">${escape(it.summary || '(אין סיכום)')}</td>
+            <td><button class="btn-view" data-id="${it.id}">צפה</button></td>
+          </tr>`
+        })
+        .join('')
+      historyBody.querySelectorAll('.btn-view').forEach((b) => {
+        b.addEventListener('click', () => {
+          loadRecording(b.dataset.id).catch((err) => {
+            statusEl.textContent = `שגיאה: ${err.message}`
+          })
+        })
+      })
+    }
+  </script>
+</body>
+</html>

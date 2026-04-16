@@ -1,0 +1,40 @@
+# ── Secrets ──
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+**/.supabase-db-password
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# ── Supabase CLI temp ──
+**/supabase/.temp/
+**/supabase/.branches/
+
+# ── Editors / OS ──
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# ── Logs ──
+*.log
+backend/backend.log
+
+# ── Per-user Claude Code settings (NOT shared) ──
+.claude/settings.local.json
