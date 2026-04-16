@@ -416,7 +416,15 @@
 
     const SUPABASE_URL = 'https://gykjrdgjytphuchnsbcy.supabase.co'
     const SUPABASE_KEY = 'sb_publishable_S9gaqhBTq_hK128q8AgEeg_dUyPrPkH'
-    const API = 'http://localhost:5000/api'
+
+    // Backend URL is selected by hostname so the same index.html works
+    // unchanged in local dev, staging, and production.
+    const API = (() => {
+      const h = window.location.hostname
+      if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:5000/api'
+      if (h.includes('staging')) return 'https://backend-staging-1c35.up.railway.app/api'
+      return 'https://backend-production-2b7c.up.railway.app/api'
+    })()
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
